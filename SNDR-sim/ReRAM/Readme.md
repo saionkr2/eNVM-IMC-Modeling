@@ -1,0 +1,1 @@
+This folder contains the python files required to obtain the bank-level SNDRa vs. dot-product dimension (N), conductance contrast (g_on/g_off), SNDRd vs. B_ADC, E_1bop vs. SNDRd in presence of analog non-idealities in ReRAM resistive IMC.
