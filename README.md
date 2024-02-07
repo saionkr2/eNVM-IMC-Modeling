@@ -1,2 +1,2 @@
 # eNVM-IMC-Modeling
-Analytical models capturing the analog non-idealities for resistive IMCs
+Behavioral models capturing the analog non-idealities for resistive IMCs
