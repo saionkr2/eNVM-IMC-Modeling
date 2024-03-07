@@ -68,6 +68,7 @@ Var_sig = np.zeros((len(N_all),len(V_bl_all)))
 In = np.zeros((len(N_all),len(V_bl_all),zlen,a_vec_no*w_vec_no))
 
 Var_noi_tot = np.zeros((len(N_all),len(V_bl_all)))
+k_FR = np.zeros((len(N_all),len(V_bl_all)))
 
 for Vind in range(len(V_bl_all)):
     
@@ -130,12 +131,7 @@ for Vind in range(len(V_bl_all)):
             
             R_eq_m_ones = par(rbl + R_temp_m_ones + rsl, R_mul_m_ones[r-1,:])
             R_temp_m_ones = R_eq_m_ones
-        
-        range_scaling_factor = (N*g_on-N*g_off)/(1/R_temp_ones - 1/R_temp_m_ones)
-        for i in range(w_vec_no):
-            R_temp_wdg[:,i] = R_temp_wdg[:,i]*(1/range_scaling_factor[i])
-        # range_scaling_factor = np.ptp(I_sig)/np.ptp(V_bl_s*(1/R_temp_wdg)/m)
-        # R_temp_wdg = R_temp_wdg*range_scaling_factor 
+
         
         R_temp_wdg = R_temp_wdg.reshape(-1)
         Isig_wpar_wl = (V_bl_s*((A*gm*R_temp_wdg)/(1+A*gm*R_temp_wdg))*1/R_temp_wdg)
@@ -143,9 +139,16 @@ for Vind in range(len(V_bl_all)):
         
         Ith = np.random.normal(0, Sig_Ith, size=(np.shape(Isig_wpar_wl)))
         
-        Var_sig[Nind,Vind] = np.var(I_sig)
+        Isig_wpar_wl_wm_wth = Isig_wpar_wl_wm + Ith 
+        Isig_wpar_wl_wm_wth_scaled = Isig_wpar_wl_wm_wth - np.mean(Isig_wpar_wl_wm_wth)
+        Isig_wpar_wl_wm_wth_scaled = Isig_wpar_wl_wm_wth_scaled*(np.std(I_sig)/np.std(Isig_wpar_wl_wm_wth))
+        Isig_wpar_wl_wm_wth_scaled = Isig_wpar_wl_wm_wth_scaled + np.mean(I_sig)
+               
+        k_FR[Nind, Vind] = np.std(I_sig)/np.std(Isig_wpar_wl_wm_wth)
         
-        In[Nind,Vind,:] = Isig_wpar_wl_wm + Ith - I_sig
+        In[Nind,Vind,:] = Isig_wpar_wl_wm_wth_scaled - I_sig
+        
+        Var_sig[Nind,Vind] = np.var(I_sig)
         
         Var_noi_tot[Nind,Vind] = np.var(In[Nind,Vind,:])
         
@@ -159,6 +162,7 @@ SNDRa = Var_sig/Var_noi_tot
 SNDRa_dB = 10*np.log10(SNDRa)
 
 SNDRa_max = np.max(SNDRa_dB,axis=1)
+Volt_argmax = np.argmax(SNDRa_dB,axis=1)
 
 np.save('SNDRa_dB_FeFET_vs_N.npy', SNDRa_dB)
 
@@ -167,7 +171,7 @@ lin_w = 5
 
 fig1 = plt.figure(figsize=(11,8))
 ax1 = fig1.add_subplot(1,1,1)
-ax1.plot(N_all, SNDRa_max,c="r", markersize=10, marker='o', linewidth=lin_w)
+ax1.plot(N_all*0.5, SNDRa_dB[:,Volt_argmax[0]],c="r", markersize=10, marker='o', linewidth=lin_w)
 ax1.grid(1,'major', linewidth=0.5, color='black')
 ax1.grid(1,'minor', linewidth=0.5, ls='--')
 plt.xscale("log")
