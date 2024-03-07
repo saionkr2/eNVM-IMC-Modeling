@@ -129,23 +129,26 @@ for Rind in range(len(ratio)):
             R_eq_m_ones = par(rbl + R_temp_m_ones + rsl, R_mul_m_ones[r-1,:])
             R_temp_m_ones = R_eq_m_ones
         
-        range_scaling_factor = (N*g_on-N*g_off)/(1/R_temp_ones - 1/R_temp_m_ones)
-        for i in range(w_vec_no):
-            R_temp_wdg[:,i] = R_temp_wdg[:,i]*(1/range_scaling_factor[i])
-
         R_temp_wdg = R_temp_wdg.reshape(-1)
         Isig_wpar_wl = (V_bl_s*((A*gm*R_temp_wdg)/(1+A*gm*R_temp_wdg))*1/R_temp_wdg)
-        Isig_wpar_wl_wm = (Isig_wpar_wl)*1/(m+np.sqrt(m)*Sig_m*np.random.normal(size=(np.shape(Isig_wpar_wl)))) 
+        Isig_wpar_wl_wm = (Isig_wpar_wl)*1/(m+np.sqrt(m)*Sig_m*np.random.normal(size=(np.shape(Isig_wpar_wl))))
         
         Ith = np.random.normal(0, Sig_Ith, size=(np.shape(Isig_wpar_wl)))
         
-        Var_sig[Rind,Vind] = np.var(I_sig)
+        Isig_wpar_wl_wm_wth = Isig_wpar_wl_wm + Ith 
         
-        In[Rind,Vind,:] = Isig_wpar_wl_wm + Ith - I_sig
+        
+        Isig_wpar_wl_wm_wth_scaled = Isig_wpar_wl_wm_wth - np.mean(Isig_wpar_wl_wm_wth)
+        Isig_wpar_wl_wm_wth_scaled = Isig_wpar_wl_wm_wth_scaled*(np.std(I_sig)/np.std(Isig_wpar_wl_wm_wth))
+        Isig_wpar_wl_wm_wth_scaled = Isig_wpar_wl_wm_wth_scaled + np.mean(I_sig)
+        
+        In[Rind,Vind,:] = Isig_wpar_wl_wm_wth_scaled - I_sig
+        
+        Var_sig[Rind,Vind] = np.var(I_sig)
         
         Var_noi_tot[Rind,Vind] = np.var(In[Rind,Vind,:])
         
-        print(np.var(I_sig),np.var(In[Rind,Vind,:]))   
+        print(np.var(I_sig),np.var(In[Rind,Vind,:]))    
             
         
 #%%

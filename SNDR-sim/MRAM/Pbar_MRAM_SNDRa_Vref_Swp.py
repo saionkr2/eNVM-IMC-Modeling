@@ -59,11 +59,11 @@ Sig_m = 0.05
 
 #Activate each non-ideality one-by-one
 # Sig_Ith = 0
-# Sig_m = 0
-# rbl = 0
-# rsl = 0
-# Sig_mb_goff = 0
-# Sig_mb_gon = 0
+Sig_m = 0
+rbl = 0
+rsl = 0
+Sig_mb_goff = 0
+Sig_mb_gon = 0
 
 V_bl_all = np.logspace(-2,-1.25,10)
 
@@ -149,26 +149,26 @@ for Vind in range(len(V_bl_all)):
             R_eq_m_ones = par(rbl + R_temp_m_ones + rsl, R_mul_m_ones[r-1,:])
             R_temp_m_ones = R_eq_m_ones
         
-        range_scaling_factor = (N*g_on-N*g_off)/(1/R_temp_ones - 1/R_temp_m_ones)
-        for i in range(w_vec_no):
-            R_temp_wdg[:,i] = R_temp_wdg[:,i]*(1/range_scaling_factor[i])
-        
-            
         R_temp_wdg = R_temp_wdg.reshape(-1)
         Isig_wpar_wl = (V_bl_s*((A*gm*R_temp_wdg)/(1+A*gm*R_temp_wdg))*1/R_temp_wdg)
-        Isig_wpar_wl_wm = (Isig_wpar_wl)*1/(m+np.sqrt(m)*Sig_m*np.random.normal(size=(np.shape(Isig_wpar_wl)))) 
+        Isig_wpar_wl_wm = (Isig_wpar_wl)*1/(m+np.sqrt(m)*Sig_m*np.random.normal(size=(np.shape(Isig_wpar_wl))))
         
         Ith = np.random.normal(0, Sig_Ith, size=(np.shape(Isig_wpar_wl)))
         
-        Isig_wpar_wl_wm = Isig_wpar_wl_wm + Ith
+        Isig_wpar_wl_wm_wth = Isig_wpar_wl_wm + Ith 
         
-
-        In[Nind,Vind,:] = Isig_wpar_wl_wm - I_sig
+        
+        Isig_wpar_wl_wm_wth_scaled = Isig_wpar_wl_wm_wth - np.mean(Isig_wpar_wl_wm_wth)
+        Isig_wpar_wl_wm_wth_scaled = Isig_wpar_wl_wm_wth_scaled*(np.std(I_sig)/np.std(Isig_wpar_wl_wm_wth))
+        Isig_wpar_wl_wm_wth_scaled = Isig_wpar_wl_wm_wth_scaled + np.mean(I_sig)
+        
+        In[Nind,Vind,:] = Isig_wpar_wl_wm_wth_scaled - I_sig
         
         Var_sig[Nind,Vind] = np.var(I_sig)
+        
         Var_noi_tot[Nind,Vind] = np.var(In[Nind,Vind,:])
         
-        print(np.var(I_sig),np.var(In[Nind,Vind,:]))   
+        print(np.var(I_sig),np.var(In[Nind,Vind,:]))    
         
 #%%
 SNDRa = Var_sig/Var_noi_tot
@@ -177,7 +177,7 @@ SNDRa_dB = 10*np.log10(SNDRa)
         
 print(SNDRa_dB)
 #Activate each non-ideality 
-#np.save('SNDRa_MRAM_vs_Vbl_XX.npy',SNDRa_dB)
+np.save('SNDRa_MRAM_vs_Vbl_AT.npy',SNDRa_dB)
 #%% 
 
 plt.close('all')
