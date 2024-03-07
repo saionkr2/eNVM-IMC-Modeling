@@ -10,18 +10,19 @@ import csv
 import math
 from scipy import special
 import scipy.stats
+import copy
 
 import matplotlib.pyplot as plt
 import matplotlib
 
-plt.rc('font', size=18, weight='bold') 
+
 matplotlib.rcParams['axes.linewidth'] = 1.5
 plt.rcParams["font.family"] = "arial"
 np.random.seed(2021)
 font = {'family': 'arial',
         'color':  'black',
-        'weight': 'bold',
-        'size': 16,
+        'weight': 'regular',
+        'size': 22,
         }
 
 def Qfunc(x):
@@ -113,8 +114,8 @@ for Vind in range(len(V_bl_all)):
             y_mult_wdg[:,:,i] = np.multiply(a_mat_bin.T,1/(g_vec[:,i]))
         
         R_mul_wdg = np.where(y_mult_wdg == 0 , 1e23, y_mult_wdg)
-        R_mul_ones = np.where(g_vec_ideal == g_off , 1e23, 1/g_vec_ideal)
-        R_mul_m_ones = np.where(g_vec_ideal == g_on , 1e23, 1/g_vec_ideal)
+        R_mul_ones = np.where(g_vec_ideal == g_off , 1e23, 1/g_vec)
+        R_mul_m_ones = np.where(g_vec_ideal == g_on , 1e23, 1/g_vec)
         
         R_temp_wdg = R_mul_wdg[:,2*N-1,:]
         R_temp_ones = R_mul_ones[2*N-1,:]
@@ -130,23 +131,27 @@ for Vind in range(len(V_bl_all)):
             R_eq_m_ones = par(rbl + R_temp_m_ones + rsl, R_mul_m_ones[r-1,:])
             R_temp_m_ones = R_eq_m_ones
         
-        range_scaling_factor = (N*g_on-N*g_off)/(1/R_temp_ones - 1/R_temp_m_ones)
-        for i in range(w_vec_no):
-            R_temp_wdg[:,i] = R_temp_wdg[:,i]*(1/range_scaling_factor[i])
-            
+        
         R_temp_wdg = R_temp_wdg.reshape(-1)
         Isig_wpar_wl = (V_bl_s*((A*gm*R_temp_wdg)/(1+A*gm*R_temp_wdg))*1/R_temp_wdg)
-        Isig_wpar_wl_wm = (Isig_wpar_wl)*1/(m+np.sqrt(m)*Sig_m*np.random.normal(size=(np.shape(Isig_wpar_wl)))) 
+        Isig_wpar_wl_wm = (Isig_wpar_wl)*1/(m+np.sqrt(m)*Sig_m*np.random.normal(size=(np.shape(Isig_wpar_wl))))
         
         Ith = np.random.normal(0, Sig_Ith, size=(np.shape(Isig_wpar_wl)))
         
-        Var_sig[Nind,Vind] = np.var(I_sig)
+        Isig_wpar_wl_wm_wth = Isig_wpar_wl_wm + Ith 
         
-        In[Nind,Vind,:] = Isig_wpar_wl_wm + Ith - I_sig
+        
+        Isig_wpar_wl_wm_wth_scaled = Isig_wpar_wl_wm_wth - np.mean(Isig_wpar_wl_wm_wth)
+        Isig_wpar_wl_wm_wth_scaled = Isig_wpar_wl_wm_wth_scaled*(np.std(I_sig)/np.std(Isig_wpar_wl_wm_wth))
+        Isig_wpar_wl_wm_wth_scaled = Isig_wpar_wl_wm_wth_scaled + np.mean(I_sig)
+        
+        In[Nind,Vind,:] = Isig_wpar_wl_wm_wth_scaled - I_sig
+        
+        Var_sig[Nind,Vind] = np.var(I_sig)
         
         Var_noi_tot[Nind,Vind] = np.var(In[Nind,Vind,:])
         
-        print(np.var(I_sig),np.var(In[Nind,Vind,:]))   
+        print(np.var(I_sig),np.var(In[Nind,Vind,:]))    
             
 
 #%%
@@ -156,16 +161,20 @@ SNDRa = Var_sig/Var_noi_tot
 SNDRa_dB = 10*np.log10(SNDRa)
 
 SNDRa_max = np.max(SNDRa_dB,axis=1)
+Volt_argmax = np.argmax(SNDRa_dB,axis=1)
 
 np.save('SNDRa_dB_MRAM_vs_N.npy',SNDRa_dB)
 #%% 
-plt.rc('font', size=22, weight='bold') 
+plt.rc('font', size=22, weight='regular') 
 
 lin_w = 5
 
 fig1 = plt.figure(figsize=(11,8))
 ax1 = fig1.add_subplot(1,1,1)
-ax1.plot(N_all, SNDRa_max,c="r", markersize=10, marker='o', linewidth=lin_w)
+ax1.plot(N_all*0.5, SNDRa_max,c="r", markersize=10, marker='o', linewidth=lin_w)
+plt.ylabel(r'$\mathrm{SNDR}_a$',fontsize=32)
+plt.xlabel(r'$N$',fontsize=32,fontdict=font)
+
 ax1.grid(1,'major', linewidth=0.5, color='black')
 ax1.grid(1,'minor', linewidth=0.5, ls='--')
 plt.xscale("log")
